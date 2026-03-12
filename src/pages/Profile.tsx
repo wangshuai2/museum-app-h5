@@ -9,13 +9,9 @@ interface User {
   avatar?: string
 }
 
-interface ProfileProps {
-  user: User
-  onLogout: () => void
-}
-
-export default function Profile({ user, onLogout }: ProfileProps) {
+export default function Profile() {
   const navigate = useNavigate()
+  const [user, setUser] = useState<User | null>(null)
   const [stats, setStats] = useState({
     museums: 0,
     provinces: 0,
@@ -23,23 +19,27 @@ export default function Profile({ user, onLogout }: ProfileProps) {
     shares: 0,
     likes: 0,
   })
-  const [, setLoading] = useState(true)
 
   useEffect(() => {
-    fetchUserStats()
+    const savedUser = localStorage.getItem('user')
+    if (savedUser) {
+      setUser(JSON.parse(savedUser))
+    }
+    loadStats()
   }, [])
 
-  const fetchUserStats = async () => {
+  const loadStats = async () => {
+    const userId = JSON.parse(localStorage.getItem('user') || '{}').id
+    if (!userId) return
+
     try {
       const token = localStorage.getItem('token')
-      
-      // 获取足迹统计
-      const footprintsRes = await fetch(`http://localhost:3000/footprints/user/${user.id}/statistics`, {
+      const res = await fetch(`http://localhost:3000/footprints/user/${userId}/statistics`, {
         headers: { 'Authorization': `Bearer ${token}` },
       })
       
-      if (footprintsRes.ok) {
-        const data = await footprintsRes.json()
+      if (res.ok) {
+        const data = await res.json()
         setStats({
           museums: data.totalMuseums,
           provinces: data.totalProvinces,
@@ -50,16 +50,29 @@ export default function Profile({ user, onLogout }: ProfileProps) {
       }
     } catch (error) {
       console.error('获取统计失败:', error)
-    } finally {
-      setLoading(false)
     }
   }
 
   const handleLogout = () => {
-    if (confirm('确定要退出登录吗？')) {
-      onLogout()
-      navigate('/login')
-    }
+    localStorage.removeItem('token')
+    localStorage.removeItem('user')
+    navigate('/login')
+  }
+
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-yellow-50 flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-gray-500 mb-4">请先登录</p>
+          <button 
+            onClick={() => navigate('/login')}
+            className="bg-amber-600 text-white px-6 py-2 rounded-full"
+          >
+            去登录
+          </button>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -116,12 +129,14 @@ export default function Profile({ user, onLogout }: ProfileProps) {
 
         {/* Menu Items */}
         <div className="bg-white rounded-xl shadow-md divide-y divide-gray-100">
-          <button className="w-full flex items-center justify-between p-4 hover:bg-gray-50">
+          <button 
+            onClick={() => navigate('/footprints')}
+            className="w-full flex items-center justify-between p-4 hover:bg-gray-50"
+          >
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center">
                 <svg className="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                 </svg>
               </div>
               <span className="font-medium text-gray-800">我的足迹</span>
@@ -145,7 +160,10 @@ export default function Profile({ user, onLogout }: ProfileProps) {
             </svg>
           </button>
 
-          <button className="w-full flex items-center justify-between p-4 hover:bg-gray-50">
+          <button 
+            onClick={() => navigate('/share')}
+            className="w-full flex items-center justify-between p-4 hover:bg-gray-50"
+          >
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
                 <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -153,52 +171,6 @@ export default function Profile({ user, onLogout }: ProfileProps) {
                 </svg>
               </div>
               <span className="font-medium text-gray-800">我的分享</span>
-            </div>
-            <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-            </svg>
-          </button>
-
-          <button className="w-full flex items-center justify-between p-4 hover:bg-gray-50">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center">
-                <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
-                </svg>
-              </div>
-              <span className="font-medium text-gray-800">我的勋章</span>
-            </div>
-            <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-            </svg>
-          </button>
-        </div>
-
-        {/* Settings */}
-        <div className="bg-white rounded-xl shadow-md divide-y divide-gray-100">
-          <button className="w-full flex items-center justify-between p-4 hover:bg-gray-50">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
-                <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                </svg>
-              </div>
-              <span className="font-medium text-gray-800">设置</span>
-            </div>
-            <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-            </svg>
-          </button>
-
-          <button className="w-full flex items-center justify-between p-4 hover:bg-gray-50">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
-                <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              </div>
-              <span className="font-medium text-gray-800">帮助与反馈</span>
             </div>
             <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />

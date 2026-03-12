@@ -2,13 +2,6 @@ import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import BottomNav from '../components/BottomNav'
 
-interface User {
-  id: string
-  openId: string
-  nickname: string
-  avatar?: string
-}
-
 interface Museum {
   id: string
   name: string
@@ -25,11 +18,7 @@ interface Museum {
   level: string
 }
 
-interface MuseumDetailProps {
-  user: User
-}
-
-export default function MuseumDetail({ user: _user }: MuseumDetailProps) {
+export default function MuseumDetail() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const [museum, setMuseum] = useState<Museum | null>(null)
@@ -56,32 +45,36 @@ export default function MuseumDetail({ user: _user }: MuseumDetailProps) {
         const data = await response.json()
         setMuseum(data)
       } else {
-        // 使用模拟数据
-        setMuseum({
-          id: museumId,
-          name: '故宫博物院',
-          province: '北京',
-          city: '北京',
-          district: '东城区',
-          address: '景山前街4号',
-          description: '中国明清两代的皇家宫殿，旧称紫禁城，位于北京中轴线的中心。北京故宫以三大殿为中心，占地面积约72万平方米，建筑面积约15万平方米，有大小宫殿七十多座，房屋九千余间。',
-          openTime: '08:30-17:00（周一闭馆）',
-          coreExhibits: '清明上河图、千里江山图、各种釉彩大瓶',
-          images: [
-            'https://picsum.photos/400/300?random=1',
-            'https://picsum.photos/400/300?random=2',
-            'https://picsum.photos/400/300?random=3',
-          ],
-          latitude: 39.916345,
-          longitude: 116.397155,
-          level: '国家级',
-        })
+        setMockData()
       }
     } catch (error) {
       console.error('获取博物馆详情失败:', error)
+      setMockData()
     } finally {
       setLoading(false)
     }
+  }
+
+  const setMockData = () => {
+    setMuseum({
+      id: '1',
+      name: '故宫博物院',
+      province: '北京',
+      city: '北京',
+      district: '东城区',
+      address: '景山前街4号',
+      description: '中国明清两代的皇家宫殿，旧称紫禁城...',
+      openTime: '08:30-17:00（周一闭馆）',
+      coreExhibits: '清明上河图、千里江山图',
+      images: [
+        'https://picsum.photos/400/300?random=1',
+        'https://picsum.photos/400/300?random=2',
+        'https://picsum.photos/400/300?random=3',
+      ],
+      latitude: 39.916345,
+      longitude: 116.397155,
+      level: '国家级',
+    })
   }
 
   const handleFavorite = () => {
@@ -90,11 +83,6 @@ export default function MuseumDetail({ user: _user }: MuseumDetailProps) {
 
   const handleMarkVisited = () => {
     setHasVisited(!hasVisited)
-  }
-
-  const handleShare = () => {
-    // 分享功能
-    alert('分享功能开发中...')
   }
 
   if (loading) {
@@ -162,9 +150,6 @@ export default function MuseumDetail({ user: _user }: MuseumDetailProps) {
             alt={museum.name}
             className="w-full h-full object-cover"
           />
-          <div className="absolute bottom-4 right-4 bg-black/50 text-white px-3 py-1 rounded-full text-sm">
-            1 / {museum.images.length}
-          </div>
         </div>
 
         {/* Info Section */}
@@ -196,11 +181,6 @@ export default function MuseumDetail({ user: _user }: MuseumDetailProps) {
               </svg>
               <div>
                 <p className="font-medium text-gray-800">{museum.address}</p>
-                {museum.latitude && museum.longitude && (
-                  <p className="text-xs text-gray-400 mt-1">
-                    {museum.latitude.toFixed(4)}, {museum.longitude.toFixed(4)}
-                  </p>
-                )}
               </div>
             </div>
           </div>
@@ -228,14 +208,6 @@ export default function MuseumDetail({ user: _user }: MuseumDetailProps) {
             </div>
           )}
 
-          {/* Core Exhibits */}
-          {museum.coreExhibits && (
-            <div className="bg-white rounded-xl p-4 shadow-sm">
-              <h3 className="font-bold text-gray-800 mb-2">核心展品</h3>
-              <p className="text-gray-600 text-sm">{museum.coreExhibits}</p>
-            </div>
-          )}
-
           {/* Action Buttons */}
           <div className="flex gap-3">
             <button
@@ -249,7 +221,7 @@ export default function MuseumDetail({ user: _user }: MuseumDetailProps) {
               {hasVisited ? '✓ 已打卡' : '打卡'}
             </button>
             <button
-              onClick={handleShare}
+              onClick={() => navigate('/share')}
               className="flex-1 bg-amber-600 hover:bg-amber-700 text-white py-3 rounded-xl font-semibold transition-colors"
             >
               分享
